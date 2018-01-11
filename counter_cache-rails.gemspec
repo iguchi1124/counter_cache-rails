@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.version     = CounterCacheRails::VERSION
   s.author      = ['Shota Iguchi']
   s.email       = ['shota-iguchi@cookpad.com']
-  s.homepage    = 'https://github.com/iguchi1124'
+  s.homepage    = 'https://github.com/iguchi1124/counter_cache-rails'
   s.summary     = 'ActiveRecord extentions for counter_cache.'
   s.license     = 'MIT'
 
