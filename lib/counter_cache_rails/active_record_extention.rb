@@ -9,6 +9,9 @@ module CounterCacheRails
         child_model_class = eval tableized_model.to_s.classify
         tableized_child_model = tableized_model.to_sym
         primary_key = self.primary_key.to_sym
+        callback_name = "update_#{tableized_child_model}_count".to_sym
+
+        define_model_callbacks callback_name
 
         define_method "#{tableized_child_model}_count" do
           count = Rails.cache.read(_counter_cache_key(class_name, primary_key, tableized_child_model), raw: true)
@@ -26,11 +29,15 @@ module CounterCacheRails
         end
 
         define_method "_#{tableized_child_model}_count_incr" do
-          Rails.cache.increment(_counter_cache_key(class_name, primary_key, tableized_child_model))
+          run_callbacks callback_name do
+            Rails.cache.increment(_counter_cache_key(class_name, primary_key, tableized_child_model))
+          end
         end
 
         define_method "_#{tableized_child_model}_count_decr" do
-          Rails.cache.decrement(_counter_cache_key(class_name, primary_key, tableized_child_model))
+          run_callbacks callback_name do
+            Rails.cache.decrement(_counter_cache_key(class_name, primary_key, tableized_child_model))
+          end
         end
 
         after_create do
