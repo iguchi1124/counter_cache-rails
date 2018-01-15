@@ -6,7 +6,7 @@ module CounterCacheRails
     included do
       def self.counter_cache(tableized_model)
         class_name = self.to_s.downcase
-        child_model_class = eval tableized_model.to_s.classify
+        child_model_class = tableized_model.to_s.classify.constantize
         tableized_child_model = tableized_model.to_sym
         primary_key = self.primary_key.to_sym
         callback_name = "update_#{tableized_child_model}_count".to_sym
