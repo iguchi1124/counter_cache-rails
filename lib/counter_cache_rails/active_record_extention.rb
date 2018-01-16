@@ -13,10 +13,11 @@ module CounterCacheRails
 
         define_model_callbacks callback_name
 
-        define_method "#{tableized_child_model}_count" do
+        define_method "#{tableized_child_model}_count" do |force: false|
+
           count = Rails.cache.read(_counter_cache_key(class_name, primary_key, tableized_child_model), raw: true)
 
-          if count.nil?
+          if count.nil? || force
             count = self.send(tableized_child_model).count
             Rails.cache.write(
               self._counter_cache_key(class_name, primary_key, tableized_child_model),
