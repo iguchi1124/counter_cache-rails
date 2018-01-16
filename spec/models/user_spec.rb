@@ -37,6 +37,12 @@ RSpec.describe User do
         user.posts_count
       }.by(-1)
     end
+
+    it 'force reload' do
+      Rails.cache.write(user._counter_cache_key('user', 'id', 'posts'), 1000)
+      expect(user.posts_count).to eq 1000
+      expect(user.posts_count(force: true)).to eq 2
+    end
   end
 
   describe '#comments_count' do
