@@ -16,6 +16,10 @@ gem 'counter_cache-rails'
 class Post
   has_many :comments
   counter_cache :comments
+
+  after_update_comments_count do
+    # you can use callbacks on update counter cache
+  end
 end
 
 class Comment
@@ -27,6 +31,8 @@ post.comments_count # => 0
 
 post.comments.create(body: 'comment body')
 post.comments_count # => 1
+
+post.comments_count(force: true) # force reload counter cache
 ```
 
 ## License
