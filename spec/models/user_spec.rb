@@ -2,10 +2,11 @@ require 'rails_helper'
 
 RSpec.describe User do
   let!(:user) { User.create(name: 'user') }
+
   let!(:posts) do
     [
-      Post.create(user: user, title: 'title 1', content: 'post content 1'),
-      Post.create(user: user, title: 'title 2', content: 'post content 2')
+      Post.create(user: user, title: 'title 1', content: 'post content 1', countable: true),
+      Post.create(user: user, title: 'title 2', content: 'post content 2', countable: true)
     ]
   end
 
@@ -24,7 +25,7 @@ RSpec.describe User do
 
     it 'increment posts count' do
       expect {
-        user.posts.create(title: 'new title', content: 'new comment content')
+        user.posts.create(title: 'new title', content: 'new comment content', countable: true)
       }.to change {
         user.posts_count
       }.by(1)
@@ -42,6 +43,36 @@ RSpec.describe User do
       Rails.cache.write(user._counter_cache_key('user', 'id', 'posts'), 1000)
       expect(user.posts_count).to eq 1000
       expect(user.posts_count(force: true)).to eq 2
+    end
+
+    context 'with conditional' do
+      before do
+        user.posts.create(title: 'new title', content: 'new comment content', countable: false)
+      end
+
+      it do
+        expect(user.posts_count).to eq(user.posts.count - 1)
+      end
+
+      it 'does not increment posts count' do
+        expect {
+          user.posts.create(title: 'new title', content: 'new comment content', countable: false)
+        }.to change {
+          user.posts_count
+        }.by(0)
+      end
+
+      it 'does not decrement posts count' do
+        expect {
+          user.posts.last.destroy
+        }.to change {
+          user.posts_count
+        }.by(0)
+      end
+
+      it 'force reload' do
+        expect(user.posts_count(force: true)).to eq 2
+      end
     end
   end
 

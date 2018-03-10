@@ -15,7 +15,10 @@ gem 'counter_cache-rails'
 ```rb
 class Post
   has_many :comments
-  counter_cache :comments
+
+  counter_cache :comments,
+                if: ->(comment) { comment.visible? },
+                scope: ->(comments) { comments.visible }
 
   after_update_comments_count do
     # you can use callbacks on update counter cache

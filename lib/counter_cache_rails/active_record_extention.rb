@@ -4,21 +4,22 @@ module CounterCacheRails
     extend ActiveSupport::Concern
 
     included do
-      def self.counter_cache(tableized_model)
-        class_name = self.to_s.downcase
-        child_model_class = tableized_model.to_s.classify.constantize
+      def self.counter_cache(tableized_model, options = {})
+        class_name            = self.to_s.downcase
+        child_model_class     = tableized_model.to_s.classify.constantize
         tableized_child_model = tableized_model.to_sym
-        primary_key = self.primary_key.to_sym
-        callback_name = "update_#{tableized_child_model}_count".to_sym
+        primary_key           = self.primary_key.to_sym
+        callback_name         = "update_#{tableized_child_model}_count".to_sym
 
         define_model_callbacks callback_name
 
         define_method "#{tableized_child_model}_count" do |force: false|
-
           count = Rails.cache.read(_counter_cache_key(class_name, primary_key, tableized_child_model), raw: true)
 
           if count.nil? || force
-            count = self.send(tableized_child_model).count
+            scope = options[:scope] ? options[:scope].call(self.send(tableized_child_model)) : self.send(tableized_child_model)
+            count = scope.count
+
             Rails.cache.write(
               self._counter_cache_key(class_name, primary_key, tableized_child_model),
               count,
@@ -42,19 +43,23 @@ module CounterCacheRails
         end
 
         after_create do
+          scope = options[:scope] ? options[:scope].call(self.send(tableized_child_model)) : self.send(tableized_child_model)
+
           Rails.cache.write(
             self._counter_cache_key(class_name, primary_key, tableized_child_model),
-            self.send(tableized_child_model).count,
+            scope.count,
             raw: true
           )
         end
 
         child_model_class.class_eval do
           after_create do
+            next unless options[:if].nil? || options[:if].call(self)
             self.send(class_name.to_sym).send("_#{tableized_child_model}_count_incr")
           end
 
           after_destroy do
+            next unless options[:if].nil? || options[:if].call(self)
             self.send(class_name.to_sym).send("_#{tableized_child_model}_count_decr")
           end
         end
