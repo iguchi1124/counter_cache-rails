@@ -1,9 +1,17 @@
 # frozen_string_literal: true
+
 module CounterCacheRails
   module ActiveRecordExtention
     extend ActiveSupport::Concern
 
     included do
+      # Enable counter cache for a child association
+      #
+      # @param tableized_model [Symbol] Name of the child association
+      # @param options [Hash]
+      # @option options [Proc] :if
+      # @option options [Proc] :unless
+      # @option options [Proc] :scope
       def self.counter_cache(tableized_model, options = {})
         class_name            = self.to_s.downcase
         child_model_class     = tableized_model.to_s.classify.constantize
@@ -55,11 +63,15 @@ module CounterCacheRails
         child_model_class.class_eval do
           after_create do
             next unless options[:if].nil? || options[:if].call(self)
+            next if !options[:unless].nil? && options[:unless].call(self)
+
             self.send(class_name.to_sym).send("_#{tableized_child_model}_count_incr")
           end
 
           after_destroy do
             next unless options[:if].nil? || options[:if].call(self)
+            next if !options[:unless].nil? && options[:unless].call(self)
+
             self.send(class_name.to_sym).send("_#{tableized_child_model}_count_decr")
           end
         end
