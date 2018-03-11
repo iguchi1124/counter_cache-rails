@@ -31,7 +31,8 @@ module CounterCacheRails
             Rails.cache.write(
               self._counter_cache_key(class_name, primary_key, tableized_child_model),
               count,
-              raw: true
+              raw: true,
+              expires_in: CounterCacheRails.configuration.expires_in,
             )
           end
 
