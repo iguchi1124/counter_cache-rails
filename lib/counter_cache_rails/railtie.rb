@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module CounterCacheRails
   class Railtie < ::Rails::Railtie
     initializer 'counter_cache-rails' do

@@ -3,4 +3,6 @@ class Post < ApplicationRecord
   has_many :comments
 
   counter_cache :comments
+
+  scope :countable, -> { where(countable: true) }
 end
