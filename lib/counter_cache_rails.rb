@@ -6,9 +6,7 @@ require 'counter_cache_rails/railtie'
 module CounterCacheRails
   class << self
     def configuration
-      @configuration ||= Configuration.new(
-        expires_in: 1.hour
-      )
+      @configuration ||= Configuration.new
     end
 
     def configure
