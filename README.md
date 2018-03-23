@@ -23,6 +23,18 @@ class Post
   after_update_comments_count do
     # you can use callbacks on update counter cache
   end
+
+  after_increment_comments_count do
+    Redis.current.increment('service:total:comments')
+  end
+
+  after_decrement_comments_count do
+    Redis.current.decrement('service:total:comments')
+  end
+
+  after_cache_comments_count do
+    update(comments_count: comments_count)
+  end
 end
 
 class Comment

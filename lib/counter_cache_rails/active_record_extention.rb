@@ -17,37 +17,46 @@ module CounterCacheRails
         child_model_class     = tableized_model.to_s.classify.constantize
         tableized_child_model = tableized_model.to_sym
         primary_key           = self.primary_key.to_sym
-        callback_name         = "update_#{tableized_child_model}_count".to_sym
 
-        define_model_callbacks callback_name
+        callback_names = %i(update increment decrement cache).each_with_object({}) do |name, hash|
+          callback_name = "#{name}_#{tableized_child_model}_count".to_sym
+          hash[name] = callback_name
+          define_model_callbacks callback_name
+        end
 
         define_method "#{tableized_child_model}_count" do |force: false|
           count = Rails.cache.read(_counter_cache_key(class_name, primary_key, tableized_child_model), raw: true)
 
           if count.nil? || force
-            scope = options[:scope] ? options[:scope].call(self.send(tableized_child_model)) : self.send(tableized_child_model)
-            count = scope.count
+            run_callbacks callback_names[:cache] do
+              scope = options[:scope] ? options[:scope].call(self.send(tableized_child_model)) : self.send(tableized_child_model)
+              count = scope.count
 
-            Rails.cache.write(
-              self._counter_cache_key(class_name, primary_key, tableized_child_model),
-              count,
-              raw: true,
-              expires_in: CounterCacheRails.configuration.expires_in,
-            )
+              Rails.cache.write(
+                self._counter_cache_key(class_name, primary_key, tableized_child_model),
+                count,
+                raw: true,
+                expires_in: CounterCacheRails.configuration.expires_in,
+              )
+            end
           end
 
           count.to_i
         end
 
         define_method "_#{tableized_child_model}_count_incr" do
-          run_callbacks callback_name do
-            Rails.cache.increment(_counter_cache_key(class_name, primary_key, tableized_child_model))
+          run_callbacks callback_names[:update] do
+            run_callbacks callback_names[:increment] do
+              Rails.cache.increment(_counter_cache_key(class_name, primary_key, tableized_child_model))
+            end
           end
         end
 
         define_method "_#{tableized_child_model}_count_decr" do
-          run_callbacks callback_name do
-            Rails.cache.decrement(_counter_cache_key(class_name, primary_key, tableized_child_model))
+          run_callbacks callback_names[:update] do
+            run_callbacks callback_names[:decrement] do
+              Rails.cache.decrement(_counter_cache_key(class_name, primary_key, tableized_child_model))
+            end
           end
         end
 
