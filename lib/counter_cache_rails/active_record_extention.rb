@@ -47,7 +47,8 @@ module CounterCacheRails
         define_method "_#{tableized_child_model}_count_incr" do
           run_callbacks callback_names[:update] do
             run_callbacks callback_names[:increment] do
-              Rails.cache.increment(_counter_cache_key(class_name, primary_key, tableized_child_model))
+              key = _counter_cache_key(class_name, primary_key, tableized_child_model)
+              Rails.cache.exist?(key) ? Rails.cache.increment(key) : send("#{tableized_child_model}_count")
             end
           end
         end
@@ -55,7 +56,8 @@ module CounterCacheRails
         define_method "_#{tableized_child_model}_count_decr" do
           run_callbacks callback_names[:update] do
             run_callbacks callback_names[:decrement] do
-              Rails.cache.decrement(_counter_cache_key(class_name, primary_key, tableized_child_model))
+              key = _counter_cache_key(class_name, primary_key, tableized_child_model)
+              Rails.cache.exist?(key) ? Rails.cache.decrement(key) : send("#{tableized_child_model}_count")
             end
           end
         end
